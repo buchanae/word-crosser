@@ -2,7 +2,7 @@
 from __future__ import print_function
 
 from collections import defaultdict
-from itertools import combinations, product, permutations
+from itertools import combinations, product, permutations, product
 import re
 
 from passing_window import passing_window
@@ -33,7 +33,8 @@ words = []
 
 for line in open('words.txt'):
     text = re.sub('[^a-zA-Z]*', '', line)
-    word = Word(text)
+    #word = Word(text)
+    word = text
     words.append(word)
 
 
@@ -50,10 +51,11 @@ def header(*args, **kwargs):
     print(*print_args)
 
 
-for word_a, word_b in combinations(words, 2):
-    for letter_a, letter_b in product(word_a.letters, word_b.letters):
-        if letter_a.character == letter_b.character:
-            link(letter_a, letter_b)
+def link_all(words):
+    for word_a, word_b in combinations(words, 2):
+        for letter_a, letter_b in product(word_a.letters, word_b.letters):
+            if letter_a.character == letter_b.character:
+                link(letter_a, letter_b)
         
 
 def ngrams(seq, min_n, max_n=None):
@@ -68,7 +70,7 @@ def ngrams(seq, min_n, max_n=None):
 index = defaultdict(list)
 
 for word in words:
-    for ngram in ngrams(word.text, 2):
+    for ngram in ngrams(word, 2):
         index[ngram].append(word)
 
 
@@ -83,42 +85,68 @@ def find_parallel_arrangements(word_a, word_b):
     class InvalidArrangement(Exception): pass
 
     def find_crossers(a, b):
-        crossers = {}
+        crossers = []
 
         for key in overlap(a, b):
-            pos_crossers = index[key]
+            pos_crossers = []
+
+            for crosser in index[key]:
+                if crosser != a and crosser != b:
+                    pos_crossers.append(crosser)
+
             if not pos_crossers:
                 raise InvalidArrangement()
             else:
-                crossers[key] = pos_crossers
+                crossers.append(pos_crossers)
 
         return crossers
 
-    for view in passing_window(word_b.text, len(word_a.text)):
+    for view in passing_window(word_b, len(word_a)):
         try:
-            crossers = find_crossers(word_a.text, view)
-            arrangements[word_a.text, view] = crossers
+            crossers = find_crossers(word_a, view)
+            arrangements[word_a, view] = crossers
         except InvalidArrangement:
             pass
 
     return arrangements
 
 
-for arrangement_key, crossers in find_parallel_arrangements(Word('tat'), Word('age')).items():
-    header(*arrangement_key)
-    print(crossers)
+def report_parallel_index(index):
+    for word_a, word_index in index.items():
+        for word_b, arrangements in word_index.items():
+            header(word_a, word_b)
 
-def report_parallel_arrangements():
+            for key, crossers in arrangements.items():
+                header(*key, char='-')
+                for cross_words in crossers.items():
+                    print(cross_words)
+
+
+def build_parallels_index(words):
+    index = defaultdict(dict)
+
     for word_a, word_b in permutations(words, 2):
-        header(word_a, word_b)
-
         arrangements = find_parallel_arrangements(word_a, word_b)
+        index[word_a][word_b] = arrangements
 
-        for key, crossers in arrangements.items():
-            header(*key, char='-')
-            for crosser in crossers:
-                print(crosser)
+    return index
 
+
+parallel_index = build_parallels_index(words)
+#report_parallel_index(parallel_index)
+
+x = parallel_index['tat']['age']['tat', 'age']
+print(x)
+
+# TODO need ordered positions
+for y in product(*x):
+    print(y)
+    y = iter(y)
+    last = y.next()
+    for z in y:
+        print(last in parallel_index[z])
+        last = z
+    print()
 
 def report():
     for word in words:

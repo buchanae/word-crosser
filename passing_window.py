@@ -23,13 +23,26 @@ def passing_window(passing, window_size):
     return parts
 
 
-#stationary = 'XYZ'
-#passing = 'LMNOPQR'
+def debug(window, passing):
 
-window = 'LMNOPQR'
-passing = 'XYZ'
+    s = set()
+    for view in passing_window(passing, len(window)):
+        for a, b in zip(view, window):
+            if a != ' ':
+                p = a + b
+                s.add(p)
 
-for view in passing_window(passing, len(window)):
-    print window
-    print view
-    print
+                p = b + a
+                s.add(p)
+
+    return s
+
+if __name__ == '__main__':
+
+    A = 'XYZ'
+    B = 'LMNOPQR'
+
+    a = debug(A, B)
+    b = debug(B, A)
+
+    assert a == b

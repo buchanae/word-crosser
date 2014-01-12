@@ -168,7 +168,7 @@ def place_next():
 
 place_next()
 # TODO need a board report
-print(board.cells)
+print(board)
 
 
 def report_crossers():

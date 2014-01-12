@@ -84,14 +84,39 @@ class Board(object):
             
         return ret
 
-    def xrange(self):
-        min_x = 0
-        max_x = 0
+    def _axis_range(self, axis):
+        min = 0
+        max = 0
 
         for key in self.cells:
-            if key.x < min_x:
-                min_x = key.x
-            if key.x > max_x:
-                max_x = key.x
+            value = getattr(key, axis)
+            if value < min:
+                min = value
+            if value > max:
+                max = value
 
-        return range(min_x, max_x + 1)
+        return range(min, max + 1)
+
+    def xrange(self):
+        return self._axis_range('x')
+
+    def yrange(self):
+        return self._axis_range('y')
+
+    def __str__(self):
+        s = ''
+        for y in self.yrange():
+            for x in self.xrange():
+                p = Position(x, y)
+                cell = self.cells.get(p)
+
+                if cell is None:
+                    content = ' '
+                elif cell is Block:
+                    content = '#'
+                else:
+                    content = cell
+                s += content
+            s += '\n'
+
+        return s

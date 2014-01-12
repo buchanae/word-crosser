@@ -5,6 +5,7 @@ from collections import defaultdict
 from itertools import combinations, product, permutations, product
 import re
 
+from board import Board, Position
 from passing_window import passing_window
 
 
@@ -70,8 +71,9 @@ def ngrams(seq, min_n, max_n=None):
 index = defaultdict(list)
 
 for word in words:
-    for ngram in ngrams(word, 2):
-        index[ngram].append(word)
+    for ngram in ngrams(word, 1, len(word)):
+        key = tuple(ngram)
+        index[key].append(word)
 
 
 def find_parallel_arrangements(word_a, word_b):
@@ -135,18 +137,53 @@ def build_parallels_index(words):
 parallel_index = build_parallels_index(words)
 #report_parallel_index(parallel_index)
 
-x = parallel_index['tat']['age']['tat', 'age']
-print(x)
+board = Board()
+start = Position(0, 0)
+board.place_word(start, 'tat')
 
-# TODO need ordered positions
-for y in product(*x):
-    print(y)
-    y = iter(y)
-    last = y.next()
-    for z in y:
-        print(last in parallel_index[z])
-        last = z
-    print()
+n = start.down()
+board.place_word(n, 'age')
+
+def place_next():
+    for x, col in board.cols():
+        # TODO need to break into segments
+        col_start = col[0].position
+        contents = [cell.content for cell in col]
+        key = tuple(contents)
+
+        k = ''.join(str(c) for c in key)
+        crossers = index[key]
+        for crosser in crossers:
+            print(crosser)
+            for m in re.finditer(k, crosser):
+                # TODO need Position.up(N)
+                p = col_start
+                for _ in range(m.start()):
+                    p = p.up()
+
+                print(crosser, k, m.start())
+                # TODO place_word needs a direction
+                board.place_word(p, crosser)
+                return
+
+place_next()
+# TODO need a board report
+print(board.cells)
+
+
+def report_crossers():
+    x = parallel_index['tat']['age']['tat', 'age']
+    print(x)
+
+    # TODO need ordered positions
+    for y in product(*x):
+        print(y)
+        y = iter(y)
+        last = y.next()
+        for z in y:
+            print(last in parallel_index[z])
+            last = z
+        print()
 
 def report():
     for word in words:
